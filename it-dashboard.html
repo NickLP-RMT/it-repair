@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IT Dashboard</title>
+  <style>
+    body { font-family: sans-serif; background: #f5f5f5; padding: 20px; max-width: 900px; margin: auto; }
+    h2 { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+    th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+    th { background: #2c7be5; color: white; }
+    button { padding: 6px 12px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #218838; }
+  </style>
+</head>
+<body>
+  <h2>🧰 IT Dashboard - รายการแจ้งซ่อม</h2>
+  <table id="repairTable">
+    <thead>
+      <tr>
+        <th>ชื่อผู้แจ้ง</th>
+        <th>หมวด</th>
+        <th>ความเร่งด่วน</th>
+        <th>รายละเอียด</th>
+        <th>สถานะ</th>
+        <th>จัดการ</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const SUPABASE_URL = "https://rgjzaxxekocrbkvavpvc.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnanpheHhla29jcmJrdmF2cHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1NDkxNzksImV4cCI6MjA2NTEyNTE3OX0.OgOU7SEEbcz0-j27Ui7FRvgstkQfkK1HQH4JXF-Xf9Q";
+
+    async function loadData() {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/repairs?select=*`, {
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: "Bearer " + SUPABASE_KEY
+        }
+      });
+      const data = await res.json();
+      const tbody = document.querySelector("#repairTable tbody");
+      tbody.innerHTML = "";
+
+      data.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${row.name}</td>
+          <td>${row.category}</td>
+          <td>${row.priority}</td>
+          <td>${row.issue}</td>
+          <td>${row.status}</td>
+          <td>
+            ${row.status !== "done" ? `<button onclick="markDone(${row.id}, '${row.line_token}', '${row.issue}')">ซ่อมเสร็จ</button>` : "-"}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function markDone(id, token, issue) {
+      // 1. Update status to "done"
+      await fetch(`${SUPABASE_URL}/rest/v1/repairs?id=eq.${id}`, {
+        method: "PATCH",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: "Bearer " + SUPABASE_KEY,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ status: "done" })
+      });
+
+      // 2. Send LINE Notify to user
+      await fetch("https://notify-api.line.me/api/notify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Authorization": "Bearer " + token
+        },
+        body: new URLSearchParams({
+          message: `✅ งานของคุณได้รับการซ่อมเสร็จแล้ว\nปัญหา: ${issue}`
+        })
+      });
+
+      alert("📨 แจ้งเตือนผู้ใช้เรียบร้อยแล้ว");
+      loadData(); // refresh table
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
