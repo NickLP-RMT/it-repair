@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Report IT Issue</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #f9f9f9; }
     h2 { text-align: center; }
@@ -11,13 +12,14 @@
     input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; }
     button { margin-top: 20px; padding: 10px 15px; background: #2c7be5; color: white; border: none; border-radius: 4px; cursor: pointer; }
     button:hover { background: #1a5fc4; }
+    .readonly { background: #eee; }
   </style>
 </head>
 <body>
   <h2>🛠 แจ้งซ่อมอุปกรณ์</h2>
   <form id="repairForm">
     <label>ชื่อผู้แจ้ง:</label>
-    <input type="text" id="name" required />
+    <input type="text" id="name" class="readonly" readonly />
 
     <label>หมวดหมู่:</label>
     <select id="category">
@@ -37,26 +39,38 @@
     <label>รายละเอียดปัญหา:</label>
     <textarea id="issue" rows="4" required></textarea>
 
-    <label>LINE Notify Token (ของผู้แจ้ง):</label>
-    <input type="text" id="line_token" required />
-
     <button type="submit">ส่งแจ้งซ่อม</button>
   </form>
 
   <script>
-    const SUPABASE_URL = "https://rgjzaxxekocrbkvavpvc.supabase.co"; // <-- เปลี่ยนตรงนี้
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnanpheHhla29jcmJrdmF2cHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1NDkxNzksImV4cCI6MjA2NTEyNTE3OX0.OgOU7SEEbcz0-j27Ui7FRvgstkQfkK1HQH4JXF-Xf9Q"; // <-- เปลี่ยนตรงนี้
+    const SUPABASE_URL = "https://rgjzaxxekocrbkvavpvc.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnanpheHhla29jcmJrdmF2cHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1NDkxNzksImV4cCI6MjA2NTEyNTE3OX0.OgOU7SEEbcz0-j27Ui7FRvgstkQfkK1HQH4JXF-Xf9Q";
 
+    let line_uid = "";
+    let displayName = "";
+
+    // ✅ เริ่มต้น LIFF
+    liff.init({ liffId: "1657877232-ZOZDLw3o" }) // ← ใช้ LIFF ID ที่ฝั่งผมจัดให้
+      .then(() => {
+        if (!liff.isLoggedIn()) {
+          liff.login();
+        } else {
+          liff.getProfile().then(profile => {
+            line_uid = profile.userId;
+            displayName = profile.displayName;
+            document.getElementById("name").value = displayName;
+          });
+        }
+      });
+
+    // ✅ เมื่อกดส่งฟอร์ม
     document.getElementById("repairForm").addEventListener("submit", async function (e) {
       e.preventDefault();
 
-      const name = document.getElementById("name").value;
       const category = document.getElementById("category").value;
       const priority = document.getElementById("priority").value;
       const issue = document.getElementById("issue").value;
-      const line_token = document.getElementById("line_token").value;
 
-      // 1. บันทึกลง Supabase
       const res = await fetch(`${SUPABASE_URL}/rest/v1/repairs`, {
         method: "POST",
         headers: {
@@ -66,29 +80,21 @@
           "Prefer": "return=representation"
         },
         body: JSON.stringify({
-          name, category, priority, issue, line_token, status: "pending"
+          name: displayName,
+          line_uid: line_uid,
+          category,
+          priority,
+          issue,
+          status: "pending"
         })
       });
 
       if (res.ok) {
-        alert("📌 แจ้งซ่อมสำเร็จ!");
-
-        // 2. ส่ง LINE Notify
-        await fetch("https://notify-api.line.me/api/notify", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Authorization": "Bearer " + line_token
-          },
-          body: new URLSearchParams({
-            message: `🛠 ระบบได้รับแจ้งซ่อมจากคุณเรียบร้อยแล้ว\nปัญหา: ${issue}\nสถานะ: กำลังดำเนินการ`
-          })
-        });
-
-        alert("📨 ส่งแจ้งเตือนไปที่ LINE สำเร็จ");
+        alert("📌 แจ้งซ่อมสำเร็จ! ระบบกำลังดำเนินการ");
         document.getElementById("repairForm").reset();
+        document.getElementById("name").value = displayName;
       } else {
-        alert("❌ แจ้งซ่อมไม่สำเร็จ กรุณาตรวจสอบอีกครั้ง");
+        alert("❌ แจ้งซ่อมไม่สำเร็จ กรุณาลองใหม่");
       }
     });
   </script>
