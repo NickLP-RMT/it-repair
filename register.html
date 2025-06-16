@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ลงทะเบียนผู้ใช้งาน</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    h2 { text-align: center; }
+    label { display: block; margin-top: 15px; }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px;
+      width: 100%;
+      background: #22c55e;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover { background: #16a34a; }
+  </style>
+</head>
+<body>
+  <h2>📝 ลงทะเบียนผู้ใช้งาน</h2>
+  <form id="registerForm">
+    <label>ชื่อพนักงาน:</label>
+    <input type="text" id="name" required />
+
+    <label>แผนก:</label>
+    <input type="text" id="department" required />
+
+    <input type="hidden" id="line_uid" />
+
+    <button type="submit">บันทึกข้อมูล</button>
+  </form>
+
+  <script>
+    const SUPABASE_URL = "https://rgjzaxxekocrbkvavpvc.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnanpheHhla29jcmJrdmF2cHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1NDkxNzksImV4cCI6MjA2NTEyNTE3OX0.OgOU7SEEbcz0-j27Ui7FRvgstkQfkK1HQH4JXF-Xf9Q";
+
+    async function init() {
+      const params = new URLSearchParams(location.search);
+      let uid = params.get("uid");
+
+      if (!uid) {
+        // ถ้าไม่มีใน query string → ใช้ LIFF
+        await liff.init({ liffId: "YOUR_LIFF_ID_HERE" }); // ← ใส่ LIFF ID ที่ได้จาก LINE Developers
+        const profile = await liff.getProfile();
+        uid = profile.userId;
+      }
+
+      document.getElementById("line_uid").value = uid;
+    }
+
+    init();
+
+    document.getElementById("registerForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById("name").value;
+      const department = document.getElementById("department").value;
+      const line_uid = document.getElementById("line_uid").value;
+
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/users`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_KEY,
+          "Authorization": "Bearer " + SUPABASE_KEY,
+          "Prefer": "return=representation"
+        },
+        body: JSON.stringify({
+          name, department, line_uid
+        })
+      });
+
+      if (res.ok) {
+        alert("✅ ลงทะเบียนเรียบร้อย");
+        document.getElementById("registerForm").reset();
+      } else {
+        alert("❌ ไม่สามารถลงทะเบียนได้ กรุณาลองใหม่");
+      }
+    });
+  </script>
+</body>
+</html>
