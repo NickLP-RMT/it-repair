@@ -38,19 +38,11 @@
 <body>
   <h2>📝 ลงทะเบียนผู้ใช้งาน</h2>
   <form id="registerForm">
-    <label>ชื่อ (Name):</label>
-    <input type="text" id="firstname" required />
+    <label>ชื่อพนักงาน:</label>
+    <input type="text" id="name" required />
 
-    <label>นามสกุล (Surname):</label>
-    <input type="text" id="lastname" required />
-
-    <label>แผนก (Department):</label>
-    <select id="department" required>
-      <option value="">-- กรุณาเลือกแผนก --</option>
-      <option value="Office">Office</option>
-      <option value="Production">Production</option>
-      <option value="MT">MT</option>
-    </select>
+    <label>แผนก:</label>
+    <input type="text" id="department" required />
 
     <input type="hidden" id="line_uid" />
 
@@ -66,7 +58,7 @@
       let uid = params.get("uid");
 
       if (!uid) {
-        await liff.init({ liffId: "2007560922-97m423m8" });
+        await liff.init({ liffId: "2007560922-97m423m8" }); // LIFF ID
         const profile = await liff.getProfile();
         uid = profile.userId;
       }
@@ -79,8 +71,7 @@
     document.getElementById("registerForm").addEventListener("submit", async function (e) {
       e.preventDefault();
 
-      const firstname = document.getElementById("firstname").value.trim();
-      const lastname = document.getElementById("lastname").value.trim();
+      const name = document.getElementById("name").value;
       const department = document.getElementById("department").value;
       const line_uid = document.getElementById("line_uid").value;
 
@@ -93,10 +84,7 @@
           "Prefer": "return=representation"
         },
         body: JSON.stringify({
-          firstname,
-          lastname,
-          department,
-          line_uid
+          name, department, line_uid
         })
       });
 
