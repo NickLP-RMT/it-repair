@@ -58,8 +58,7 @@
       let uid = params.get("uid");
 
       if (!uid) {
-        // ถ้าไม่มีใน query string → ใช้ LIFF
-        await liff.init({ liffId: "2007560922-97m423m8" }); // ← ใส่ LIFF ID ที่ได้จาก LINE Developers
+        await liff.init({ liffId: "2007560922-97m423m8" }); // LIFF ID
         const profile = await liff.getProfile();
         uid = profile.userId;
       }
