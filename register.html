@@ -59,7 +59,7 @@
 
       if (!uid) {
         // ถ้าไม่มีใน query string → ใช้ LIFF
-        await liff.init({ liffId: "YOUR_LIFF_ID_HERE" }); // ← ใส่ LIFF ID ที่ได้จาก LINE Developers
+        await liff.init({ liffId: "2007560922-97m423m8" }); // ← ใส่ LIFF ID ที่ได้จาก LINE Developers
         const profile = await liff.getProfile();
         uid = profile.userId;
       }
