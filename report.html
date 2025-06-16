@@ -1,9 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Report IT Issue</title>
+  <title>แจ้งซ่อมอุปกรณ์</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     body {
       font-family: sans-serif;
@@ -25,20 +27,20 @@
       margin-top: 20px;
       padding: 10px;
       width: 100%;
-      background: #2c7be5;
+      background: #3b82f6;
       color: white;
       border: none;
       border-radius: 4px;
       cursor: pointer;
     }
-    button:hover { background: #1a5fc4; }
+    button:hover { background: #2563eb; }
   </style>
 </head>
 <body>
   <h2>🛠 แจ้งซ่อมอุปกรณ์</h2>
   <form id="repairForm">
     <label>ชื่อผู้แจ้ง:</label>
-    <input type="text" id="name" required />
+    <input type="text" id="name" readonly />
 
     <label>หมวดหมู่:</label>
     <select id="category">
@@ -67,12 +69,35 @@
     const SUPABASE_URL = "https://rgjzaxxekocrbkvavpvc.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnanpheHhla29jcmJrdmF2cHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1NDkxNzksImV4cCI6MjA2NTEyNTE3OX0.OgOU7SEEbcz0-j27Ui7FRvgstkQfkK1HQH4JXF-Xf9Q";
 
-    // ดึง UID จาก query string
-    const params = new URLSearchParams(window.location.search);
-    const uid = params.get("uid");
-    if (uid) {
+    async function init() {
+      const params = new URLSearchParams(location.search);
+      let uid = params.get("uid");
+
+      if (!uid) {
+        await liff.init({ liffId: "2007560922-97m423m8" });
+        const profile = await liff.getProfile();
+        uid = profile.userId;
+      }
+
       document.getElementById("line_uid").value = uid;
+
+      // fetch name from Supabase users table
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/users?line_uid=eq.${uid}`, {
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": "Bearer " + SUPABASE_KEY
+        }
+      });
+
+      const data = await res.json();
+      if (data.length > 0) {
+        document.getElementById("name").value = data[0].name;
+      } else {
+        document.getElementById("name").value = "(ไม่พบข้อมูล)";
+      }
     }
+
+    init();
 
     document.getElementById("repairForm").addEventListener("submit", async function (e) {
       e.preventDefault();
